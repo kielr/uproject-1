@@ -45,7 +45,7 @@ Print a title and results as day and percentage.
 def print_error_percentage(title, result):
     print(title)
     for record in result:
-        print("\t• %s — %s errors" % (record[0], "{:,}%".format(record[1])));
+        print("\t• %s — %.2f%% errors" % (record[0], float(record[1])));
     print("\n")
 
 '''
@@ -94,29 +94,35 @@ Print which days had >1% of errors.
 '''
 def days_with_errors():
     # Declare query. The final table should have a day and percentage column.
+    # We need (Non-200 requests) / (Total number of requests) PER DAY and then select the ones where the percentage is more than 1.00
+    
+    # Going to update this to use <https://www.postgresql.org/docs/9.1/queries-with.html> WITH clauses. Makes it more readable.
     query = (
-        # Select the day and percentage fields from the final table
-        "SELECT day, percentage FROM ("
-            # Select the day field, and the rounded result of this division from 
-            "SELECT day, ROUND("
-                # Sum all of the http requests and divide by the total number of requests on that day. Multiply by 100 so we can display it pretty later.
-                "(SUM(http_requests)/(SELECT COUNT(*) FROM log WHERE SUBSTRING(CAST(log.time AS TEXT), 0, 11) = day) * 100)," 
-                "2"
-            ") AS percentage " # Declare the result of this query as a percentage.
-            # Need to get all of HTTP requests for use in sum above.
-            "FROM ("
-                # Select the day, and aggregate and call the result http_request. Only aggregate bad requests.
-                "SELECT SUBSTRING(CAST(log.time AS TEXT), 0, 11) as day, COUNT(*) AS http_requests FROM log "
-                "WHERE status LIKE '%404%' "
-                "GROUP BY day"
-            ") AS log_percentage "
-            "GROUP BY day "
-            "ORDER BY percentage DESC"
+        # First, lets get the non-200 requests, make sure to convert from timestamp to date with '::' or CAST from <https://www.postgresql.org/docs/7.3/sql-syntax.html>
+        "WITH badrequests AS ("
+            "SELECT time::date, count(*) AS size "
+            "FROM log "
+            "WHERE status NOT LIKE '%200%' "
+            "GROUP BY time::date "
+            "ORDER BY time::date DESC"
+        "),"
+        # Next, lets get the total number of requests 
+        " totalrequests AS ("
+            "SELECT time::date, count(*) AS size "
+            "FROM log "
+            "GROUP BY time::date "
+            "ORDER BY time::date DESC"
+        "),"
+        # Last, lets make our result table, one column as the time (or day), and one column as the percentage.
+        " resulttable AS ("
+            "SELECT totalrequests.time, "
+            "badrequests.size::float / totalrequests.size::float * 100"
+            "AS percentage "
+            "FROM badrequests, totalrequests "
+            "WHERE badrequests.time = totalrequests.time"
         ") "
-        "AS my_query "
-        # Finally, only show days with more than 1%
-        "WHERE percentage >= 1.00"
-    )
+        "SELECT * from resulttable WHERE percentage > 1"
+    ) 
 
     # Run the query.
     result = perform_query(query)
@@ -127,6 +133,6 @@ def days_with_errors():
 
 # If this file is run w/ python from terminal
 if __name__ == "__main__":
-    top_three_articles()
-    popular_authors()
+    #top_three_articles()
+    #popular_authors()
     days_with_errors()
