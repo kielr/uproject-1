@@ -55,8 +55,8 @@ def top_three_articles():
     query = (
         "SELECT articles.title, COUNT(*) AS num FROM articles " 
         "INNER JOIN log ON log.path LIKE CONCAT('%', articles.slug, '%') "
-        "AND log.method = 'GET' "
-        "AND log.status = '200 OK' "
+        "AND log.method LIKE '%GET%' "
+        "AND log.status LIKE '%200%' "
         "GROUP BY articles.title "
         "ORDER BY num DESC "
         "LIMIT 3 "
