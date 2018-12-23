@@ -96,7 +96,7 @@ def days_with_errors():
     # Declare query. The final table should have a day and percentage column.
     # We need (Non-200 requests) / (Total number of requests) PER DAY and then select the ones where the percentage is more than 1.00
     
-    # Going to update this to use <https://www.postgresql.org/docs/9.1/queries-with.html> WITH clauses. Makes it more readable.
+    # Going to update this to use <https://www.postgresql.org/docs/9.1/queries-with.html> WITH clauses. Makes it more readable and much faster than my previous query.
     query = (
         # First, lets get the non-200 requests, make sure to convert from timestamp to date with '::' or CAST from <https://www.postgresql.org/docs/7.3/sql-syntax.html>
         "WITH badrequests AS ("
