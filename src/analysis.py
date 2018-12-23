@@ -1,5 +1,4 @@
 import psycopg2 as dbapi
-import datetime
 
 DBNAME = "news"
 
