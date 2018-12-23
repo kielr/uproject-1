@@ -133,6 +133,6 @@ def days_with_errors():
 
 # If this file is run w/ python from terminal
 if __name__ == "__main__":
-    #top_three_articles()
-    #popular_authors()
+    top_three_articles()
+    popular_authors()
     days_with_errors()
